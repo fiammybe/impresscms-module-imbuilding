@@ -675,7 +675,9 @@ class mod_imbuilding_Newmodule {
 		foreach ($this->_objectsArray as $object) {
 			$object_name = $this->getObjectName($object);
 			$Object_name = ucfirst($object_name);
-			$ret .= '$modversion[\'object_handlers\'][\'' . $object_name . '\'] = \'\\\\' . $this->moduleinfo['namespace'] . '\\\\' . $Object_name . 'Handler\';
+			// The namespace stored has single backslashes, we need to escape them for the generated PHP file
+			$escapedNamespace = str_replace('\\', '\\\\', $this->moduleinfo['namespace']);
+			$ret .= '$modversion[\'object_handlers\'][\'' . $object_name . '\'] = \'\\\\' . $escapedNamespace . '\\\\' . $Object_name . 'Handler\';
 ';
 		}
 		return $ret;

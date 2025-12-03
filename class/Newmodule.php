@@ -666,7 +666,10 @@ class mod_imbuilding_Newmodule {
 	/**
 	 * Get object handlers array for icms_version.php using FQCN
 	 *
-	 * @return string
+	 * Generates PHP code that registers object handlers with their Fully Qualified Class Names.
+	 * The backslashes in namespaces must be escaped for the generated PHP file.
+	 *
+	 * @return string Generated PHP code for object_handlers array
 	 */
 	private function getObjectHandlersArray() {
 		$ret = '';
@@ -675,10 +678,17 @@ class mod_imbuilding_Newmodule {
 		foreach ($this->_objectsArray as $object) {
 			$object_name = $this->getObjectName($object);
 			$Object_name = ucfirst($object_name);
-			// The namespace stored has single backslashes, we need to escape them for the generated PHP file
-			$escapedNamespace = str_replace('\\', '\\\\', $this->moduleinfo['namespace']);
-			$ret .= '$modversion[\'object_handlers\'][\'' . $object_name . '\'] = \'\\\\' . $escapedNamespace . '\\\\' . $Object_name . 'Handler\';
-';
+
+			// Build the FQCN: \ImpressCMS\Module\ModuleName\ObjectHandler
+			// Escape backslashes for the generated PHP string literal
+			$fqcn = '\\' . $this->moduleinfo['namespace'] . '\\' . $Object_name . 'Handler';
+			$escapedFqcn = str_replace('\\', '\\\\', $fqcn);
+
+			$ret .= sprintf(
+				"\$modversion['object_handlers']['%s'] = '%s';\n",
+				$object_name,
+				$escapedFqcn
+			);
 		}
 		return $ret;
 	}

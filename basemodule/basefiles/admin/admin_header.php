@@ -10,10 +10,13 @@
  * @since		1.0
  * @author		IMBUILDING_TAG_AUTHOR_NAME <IMBUILDING_TAG_AUTHOR_EMAIL>
  * @package		basemodule
- * @version		$Id$
  */
 
 include_once "../../../include/cp_header.php";
-include_once ICMS_ROOT_PATH . "/modules/" . basename(dirname(dirname(__FILE__))) . "/include/common.php";
-if (!defined("BASEMODULE_ADMIN_URL")) define("BASEMODULE_ADMIN_URL", BASEMODULE_URL . "admin/");
+include_once ICMS_ROOT_PATH . "/modules/" . basename(dirname(__DIR__)) . "/include/common.php";
+
+if (!defined("BASEMODULE_ADMIN_URL")) {
+    define("BASEMODULE_ADMIN_URL", BASEMODULE_URL . "admin/");
+}
+
 include_once BASEMODULE_ROOT_PATH . "include/requirements.php";

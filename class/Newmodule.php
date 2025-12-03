@@ -35,6 +35,7 @@ class mod_imbuilding_Newmodule {
 		$this->_basemoduleInfo['MODULENAME'] = 'BASEMODULE';
 		$this->_basemoduleInfo['modulename'] = 'basemodule';
 		$this->_basemoduleInfo['Modulename'] = 'Basemodule';
+		$this->_basemoduleInfo['namespace'] = 'ImpressCMS\\Module\\Basemodule';
 		$this->_basemoduleInfo['author'] = 'IMBUILDING_TAG_AUTHOR_NAME';
 		$this->_basemoduleInfo['author_email'] = 'IMBUILDING_TAG_AUTHOR_EMAIL';
 		$this->_basemoduleInfo['author_website_name'] = 'IMBUILDING_TAG_AUTHOR_WEBSITE_NAME';
@@ -90,6 +91,8 @@ class mod_imbuilding_Newmodule {
 		$this->moduleinfo['MODULENAME'] = strtoupper(str_replace("-", "_", $this->moduleinfo['ModuleName']));
 		$this->moduleinfo['modulename'] = strtolower(str_replace("-", "_", $this->moduleinfo['ModuleName']));
 		$this->moduleinfo['Modulename'] = ucfirst(strtolower($this->moduleinfo['ModuleName']));
+		// Generate namespace based on module name (PSR-4 compliant)
+		$this->moduleinfo['namespace'] = 'ImpressCMS\\Module\\' . $this->moduleinfo['Modulename'];
 
 		$this->moduleinfo['developer_info'] = $this->getDeveloperInfo();
 
@@ -162,12 +165,21 @@ class mod_imbuilding_Newmodule {
 		file_put_contents($newPath, $content);
 		$this->addLog('Main language file created: ' . $newPath);
 
+		// Generate Installer.php class
+		$path = IMBUILDING_ROOT_PATH . 'basemodule' . '/model/class/Installer.php';
+		$newPath = ICMS_CACHE_PATH . '/imbuilding/' . $this->moduleinfo['modulename'] . '/class/Installer.php';
+		$content = file_get_contents($path);
+		$content = str_replace($this->_searchArray, $this->_replaceArray, $content);
+		file_put_contents($newPath, $content);
+		$this->addLog('Installer class file created: ' . $newPath);
+
 		$path = IMBUILDING_ROOT_PATH . 'basemodule' . '/model/icms_version.php';
 		$newPath = ICMS_CACHE_PATH . '/imbuilding/' . $this->moduleinfo['modulename'] . '/icms_version.php';
 		$content = file_get_contents($path);
 		$content = str_replace($this->_searchArray, $this->_replaceArray, $content);
 		$content = str_replace('/** IMBUILDING_OBJECT_ITEMS */', $this->getObjectItemsArray(), $content);
 		$content = str_replace('/** IMBUILDING_OBJECT_TEMPLATES */', $this->getObjectTemplatesArray(), $content);
+		$content = str_replace('/** IMBUILDING_OBJECT_HANDLERS */', $this->getObjectHandlersArray(), $content);
 		//$content = str_replace('/** IMBUILDING_NOTIFICATIONS_FROM */', $this->getNotificationsFromArray(), $content);
 		file_put_contents($newPath, $content);
 		$this->addLog('icms_version file created: ' . $newPath);
@@ -644,9 +656,39 @@ class mod_imbuilding_Newmodule {
 
 		foreach ($this->_objectsArray as $object) {
 			$object_name = $this->getObjectName($object);
-			$ret .= '	array("file" => "' . $this->moduleinfo['modulename'] . "_admin_" . $object_name . '.html", "description" => "' . $object_name . ' Admin Index"),
-	array("file" => "' . $this->moduleinfo['modulename'] . "_" . $object_name . '.html", "description" => "' . $object_name . ' Index"),
+			$ret .= '	["file" => "' . $this->moduleinfo['modulename'] . "_admin_" . $object_name . '.html", "description" => "' . $object_name . ' Admin Index"],
+	["file" => "' . $this->moduleinfo['modulename'] . "_" . $object_name . '.html", "description" => "' . $object_name . ' Index"],
 ';
+		}
+		return $ret;
+	}
+
+	/**
+	 * Get object handlers array for icms_version.php using FQCN
+	 *
+	 * Generates PHP code that registers object handlers with their Fully Qualified Class Names.
+	 * The backslashes in namespaces must be escaped for the generated PHP file.
+	 *
+	 * @return string Generated PHP code for object_handlers array
+	 */
+	private function getObjectHandlersArray() {
+		$ret = '';
+		if (!$this->_objectsArray) return $ret;
+
+		foreach ($this->_objectsArray as $object) {
+			$object_name = $this->getObjectName($object);
+			$Object_name = ucfirst($object_name);
+
+			// Build the FQCN: \ImpressCMS\Module\ModuleName\ObjectHandler
+			// Escape backslashes for the generated PHP string literal
+			$fqcn = '\\' . $this->moduleinfo['namespace'] . '\\' . $Object_name . 'Handler';
+			$escapedFqcn = str_replace('\\', '\\\\', $fqcn);
+
+			$ret .= sprintf(
+				"\$modversion['object_handlers']['%s'] = '%s';\n",
+				$object_name,
+				$escapedFqcn
+			);
 		}
 		return $ret;
 	}
@@ -663,9 +705,9 @@ class mod_imbuilding_Newmodule {
 		foreach ($this->_objectsArray as $object) {
 			$object_name = $this->getObjectName($object);
 			$OBJECT_NAME = strtoupper($object_name);
-			$ret .= '$adminmenu[] = array(
+			$ret .= '$adminmenu[] = [
 	"title" => _MI_' . $this->moduleinfo['MODULENAME'] . '_' . $OBJECT_NAME . 'S,
-	"link" => "admin/' . $object_name . '.php");
+	"link" => "admin/' . $object_name . '.php"];
 ';
 		}
 		return $ret;
